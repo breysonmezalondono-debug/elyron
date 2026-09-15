@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { resolveDatabaseConfig } from './database/db-fallback';
 import { AppController } from './app.controller';
@@ -176,14 +175,13 @@ const entities = [
           timezone: 'Z',
           entities,
           synchronize: config.get<string>('NODE_ENV') !== 'production',
+          migrationsRun: false,
+          migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
+          extra: { multipleStatements: true },
           retryAttempts: 10,
           retryDelay: 3000,
         };
       },
-    }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads',
     }),
     AuthModule,
     MailModule,

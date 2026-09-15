@@ -3,6 +3,16 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "modules/mail/correoimg/**/*",
+        "watchAssets": true
+      },
+      {
+        "include": "database/migrations/*.sql",
+        "watchAssets": true
+      }
+    ]
   }
 }

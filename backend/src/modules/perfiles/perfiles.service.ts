@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { PerfilColegio } from './entities/perfil-colegio.entity';
@@ -239,7 +244,8 @@ export class PerfilesService {
     await this.validarNombreUnico(dto.nombres, dto.apellidos, usuarioId);
 
     const datos = this.prepararIdentificacion(dto, dto.numeroDocumento);
-    const estimacion = this.estimator.estimarColegio(dto.anioAcademico);    const estado = this.estimator.derivarEstado({
+    const estimacion = this.estimator.estimarColegio(dto.anioAcademico);
+    const estado = this.estimator.derivarEstado({
       tipo: 'colegio',
       estadoAcademico: dto.estadoAcademico || 'en_curso',
       fechaEstimada: estimacion.fecha,
@@ -348,11 +354,7 @@ export class PerfilesService {
       );
     }
     await this.validarDocumentoUnico(dto.tipoDocumento, dto.numeroDocumento);
-    await this.validarNombreUnico(
-      dto.nombres,
-      dto.apellidos,
-      usuarioId,
-    );
+    await this.validarNombreUnico(dto.nombres, dto.apellidos, usuarioId);
 
     const ficha = await this.resolverFicha(dto.numeroFicha);
     await this.asignarFichaYRepresentacion(

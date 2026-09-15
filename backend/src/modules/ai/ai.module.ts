@@ -6,6 +6,7 @@ import { ElirPlansService } from './elir-plans.service';
 import { ElirFilesService } from './elir-files.service';
 import { ElirService } from './elir.service';
 import { ElirController } from './elir.controller';
+import { StorageModule } from '../../common/storage/storage.module';
 import { ElirPlan } from './entities/elir-plan.entity';
 import { ElirUsage } from './entities/elir-usage.entity';
 import { ElirDocument } from './entities/elir-document.entity';
@@ -20,6 +21,7 @@ import { ElirMessage } from './entities/elir-message.entity';
       ElirConversation,
       ElirMessage,
     ]),
+    StorageModule,
   ],
   controllers: [AiController, ElirController],
   providers: [AiService, ElirPlansService, ElirFilesService, ElirService],

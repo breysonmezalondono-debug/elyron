@@ -1,0 +1,3 @@
+/* Cloudflare Pages: SPA fallback — todas las rutas al index.html
+   (react-router BrowserRouter). Los assets estáticos se sirven igual. */
+/*    /index.html  200

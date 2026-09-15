@@ -50,6 +50,9 @@ backend/uploads/*
 *.bak
 *.sqlite
 *.sqlite3
+# Excepción: el esquema inicial reproducible SÍ se versiona (necesario para
+# las migraciones de producción).
+!backend/src/database/migrations/initial-schema.sql
 
 # ---------- Secretos / certificados / credenciales ----------
 *.pem

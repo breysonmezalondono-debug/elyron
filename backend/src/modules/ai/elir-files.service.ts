@@ -7,8 +7,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createHash, randomUUID } from 'crypto';
-import * as fs from 'fs';
 import * as path from 'path';
+import { StorageService } from '../../common/storage/storage.service';
 import {
   ElirDocument,
   ElirDocumentKind,
@@ -63,17 +63,11 @@ const FORBIDDEN_EXTS = new Set([
 
 @Injectable()
 export class ElirFilesService {
-  private readonly root = path.resolve(
-    process.env.UPLOAD_DIR || './uploads',
-    'elir',
-  );
-
   constructor(
     @InjectRepository(ElirDocument)
     private readonly repo: Repository<ElirDocument>,
-  ) {
-    if (!fs.existsSync(this.root)) fs.mkdirSync(this.root, { recursive: true });
-  }
+    private readonly storage: StorageService,
+  ) {}
 
   /**
    * Valida la extensión, el MIME real y el tamaño, y rechaza archivos
@@ -117,10 +111,9 @@ export class ElirFilesService {
     return { ext, kind };
   }
 
-  private userDir(userId: string): string {
-    const dir = path.join(this.root, userId);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    return dir;
+  private userDir(_userId: string): string {
+    // Mantenido por compatibilidad; la persistencia real la hace StorageService.
+    return '';
   }
 
   /**
@@ -150,11 +143,8 @@ export class ElirFilesService {
     }
 
     const storageName = `${randomUUID()}.${ext}`;
-    const storagePath = path.join(ownerId, storageName);
-    fs.writeFileSync(
-      path.join(this.userDir(ownerId), storageName),
-      file.buffer,
-    );
+    const storagePath = `elir/${ownerId}/${storageName}`;
+    await this.storage.put(storagePath, file.buffer, file.mimetype);
 
     const sha256 = createHash('sha256').update(file.buffer).digest('hex');
 
@@ -196,12 +186,14 @@ export class ElirFilesService {
   async extractText(id: string, ownerId: string): Promise<ElirDocument> {
     const doc = await this.getOwned(id, ownerId);
     if (doc.extractedText) return doc;
-    const abs = path.join(this.root, doc.storagePath);
-    if (!fs.existsSync(abs)) {
+    let buffer: Buffer;
+    try {
+      const res = await this.storage.get(doc.storagePath);
+      buffer = res.buffer;
+    } catch {
       doc.status = 'error';
       return this.repo.save(doc);
     }
-    const buffer = fs.readFileSync(abs);
     const extractUrl = `${(process.env.IA_SERVICE_URL || 'http://localhost:8000').replace(/\/$/, '')}/api/v1/extract`;
     try {
       const form = new FormData();
@@ -259,8 +251,7 @@ export class ElirFilesService {
   /** Elimina un documento del usuario (dueño o expiración). */
   async remove(id: string, ownerId: string): Promise<void> {
     const doc = await this.getOwned(id, ownerId);
-    const abs = path.join(this.root, doc.storagePath);
-    if (fs.existsSync(abs)) fs.unlinkSync(abs);
+    await this.storage.remove(doc.storagePath).catch(() => undefined);
     await this.repo.delete({ id });
   }
 
@@ -268,8 +259,27 @@ export class ElirFilesService {
   async removeExpired(id: string): Promise<void> {
     const doc = await this.repo.findOne({ where: { id } }).catch(() => null);
     if (!doc) return;
-    const abs = path.join(this.root, doc.storagePath);
-    if (fs.existsSync(abs)) fs.unlinkSync(abs);
+    await this.storage.remove(doc.storagePath).catch(() => undefined);
     await this.repo.delete({ id }).catch(() => undefined);
+  }
+
+  /** Devuelve los bytes de un documento verificando que pertenezca a `ownerId`. */
+  async readOwned(
+    id: string,
+    ownerId: string,
+  ): Promise<{ buffer: Buffer; mime: string; originalName: string }> {
+    const doc = await this.getOwned(id, ownerId);
+    const res = await this.storage.get(doc.storagePath);
+    return {
+      buffer: res.buffer,
+      mime: doc.mime,
+      originalName: doc.originalName,
+    };
+  }
+
+  /** URL firmada temporal para acceso directo (si el proveedor la soporta). */
+  async signedUrlFor(id: string, ownerId: string): Promise<string | null> {
+    const doc = await this.getOwned(id, ownerId);
+    return this.storage.signedUrl(doc.storagePath);
   }
 }

@@ -75,10 +75,18 @@ export class User extends BaseEntity {
   direccion: string;
   /** Títulos obtenidos: [{ titulo, institucion, tipo }] */
   @Column({ type: 'json', nullable: true })
-  titulosAcademicos: Array<{ titulo: string; institucion: string; tipo: string }>;
+  titulosAcademicos: Array<{
+    titulo: string;
+    institucion: string;
+    tipo: string;
+  }>;
   /** Educación informal/complementaria: [{ nombre, tipo, intensidadHoraria }] */
   @Column({ type: 'json', nullable: true })
-  educacionComplementaria: Array<{ nombre: string; tipo: string; intensidadHoraria: string }>;
+  educacionComplementaria: Array<{
+    nombre: string;
+    tipo: string;
+    intensidadHoraria: string;
+  }>;
   /** Experiencia laboral y docente: [{ empresa, cargo, funciones, fechaInicio, fechaFin }] */
   @Column({ type: 'json', nullable: true })
   experienciaLaboral: Array<{

@@ -127,6 +127,30 @@ export class ElirController {
     return { ok: true };
   }
 
+  /**
+   * Descarga autenticada de un documento de Elir. Devuelve los bytes solo si
+   * el solicitante es el dueño. Nunca expone el archivo de forma pública.
+   */
+  @Get('documentos/:id/archivo')
+  async descargarDocumento(
+    @Request() req,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, mime, originalName } = await this.files.readOwned(
+      id,
+      req.user.id,
+    );
+    res.setHeader('Content-Type', mime);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(originalName)}"`,
+    );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.send(buffer);
+  }
+
   /** Chat de Elir en streaming (SSE) con contexto académico y fuentes reales. */
   @Post('chat/stream')
   @HttpCode(200)

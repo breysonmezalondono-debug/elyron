@@ -21,9 +21,7 @@ import { SENA_ROLES } from '../../common/constants/roles';
 @Controller('admin/instituciones')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminInstitucionesController {
-  constructor(
-    private readonly adminInstituciones: AdminInstitucionesService,
-  ) {}
+  constructor(private readonly adminInstituciones: AdminInstitucionesService) {}
 
   @Get()
   @Roles(SENA_ROLES.ADMINISTRADOR)

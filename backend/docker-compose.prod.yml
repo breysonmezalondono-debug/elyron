@@ -1,0 +1,57 @@
+# ============================================================
+# ELYRON API · docker-compose de PRODUCCIÓN
+# ------------------------------------------------------------
+# SOLO el backend. La base de datos es ADMINISTRADA y externa
+# (Aiven/Cloud/DBaaS); no se levanta ningún contenedor de BD aquí.
+# Nunca se definen secretos: vienen de variables del entorno (${VAR}).
+#
+# Uso:  docker compose -f docker-compose.prod.yml up -d --build
+# ============================================================
+services:
+  api:
+    build: .
+    container_name: elyron_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_FALLBACK_ENABLED: "false"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      FRONTEND_URL: ${FRONTEND_URL}
+      APP_URL: ${APP_URL}
+      PUBLIC_API_URL: ${PUBLIC_API_URL}
+      # Almacenamiento de objetos (R2/B2) - los archivos NO se guardan aquí
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-}
+      STORAGE_REGION: ${STORAGE_REGION:-auto}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-}
+      STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE:-true}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-52428800}
+      # IA
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_URL: ${AI_API_URL:-https://api.openai.com/v1/chat/completions}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      IA_SERVICE_URL: ${IA_SERVICE_URL:-}
+      # Correo
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-smtp}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+    ports:
+      - "${PORT:-3000}:3000"
+    # En producción los archivos van a object storage; no se montan volúmenes
+    # de uploads (el filesystem es efímero). La BD es externa.

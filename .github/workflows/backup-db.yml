@@ -1,0 +1,76 @@
+# ============================================================
+# ELYRON · Backup diario de la base de datos MySQL
+# ------------------------------------------------------------
+# Ejecuta un mysqldump y lo sube a un bucket PRIVADO de
+# Cloudflare R2 (S3-compatible). GitHub Actions Free incluye
+# minutos de CI ilimitados en repositorios públicos y un buen
+# cupo en privados para este tipo de cron.
+#
+# Retención: se controla con la política de ciclo de vida del
+# bucket R2 (ej. borrar objetos con prefijo "backups/" > 14 días).
+#
+# Secretos (Settings > Secrets > Actions):
+#   DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+#   R2_ACCESS_KEY, R2_SECRET_KEY, R2_ENDPOINT, R2_BUCKET, R2_REGION
+# ============================================================
+name: Backup MySQL a R2
+
+on:
+  schedule:
+    # Todos los días a las 04:10 UTC (hora local 23:10 / 00:10 aprox.)
+    - cron: "10 4 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Crear carpeta de respaldo
+        run: mkdir -p backup
+
+      - name: Dump de la base de datos
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+        run: |
+          mysqldump \
+            --host="$DB_HOST" \
+            --port="${DB_PORT:-3306}" \
+            --user="$DB_USER" \
+            --password="$DB_PASSWORD" \
+            --single-transaction \
+            --routines \
+            --events \
+            --skip-lock-tables \
+            "$DB_NAME" > "backup/${DB_NAME}_$(date +%Y-%m-%d_%H%M%S).sql.gz" \
+            || gzip "backup/${DB_NAME}_$(date +%Y-%m-%d_%H%M%S).sql" 2>/dev/null || true
+        shell: bash
+
+      - name: Subir a R2 (privado)
+        env:
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_REGION: ${{ secrets.R2_REGION || 'auto' }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT }}
+          AWS_DEFAULT_REGION: ${{ secrets.R2_REGION || 'auto' }}
+        run: |
+          if ls backup/*.sql.gz >/dev/null 2>&1; then
+            aws s3 cp backup/ "s3://${R2_BUCKET}/backups/" \
+              --endpoint-url="$R2_ENDPOINT" \
+              --recursive \
+              --only-show-errors
+          else
+            echo "No se generó ningún dump"
+            exit 1
+          fi
+
+      - name: Notificar éxito/fallo (opcional)
+        if: always()
+        run: echo "Estado del backup: ${{ job.status }}"

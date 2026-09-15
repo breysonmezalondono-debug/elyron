@@ -6,7 +6,7 @@ import { resetPasswordHtml, verificationEmailHtml } from './email.template';
 
 export interface EmailResult {
   ok: boolean;
-  mode: 'smtp' | 'preview' | 'disabled';
+  mode: 'smtp' | 'http' | 'preview' | 'disabled';
   messageId?: string;
 }
 
@@ -32,8 +32,18 @@ export class MailService {
   private readonly transporter: Transporter | null;
   private readonly from: string;
   private readonly enabled: boolean;
+  private readonly provider: 'smtp' | 'http';
+  private readonly httpApiKey: string;
+  private readonly httpFrom: string;
 
   constructor(private readonly configService: ConfigService) {
+    this.provider =
+      this.configService.get<string>('MAIL_PROVIDER', 'smtp') === 'resend'
+        ? 'http'
+        : 'smtp';
+    this.httpApiKey = this.configService.get<string>('RESEND_API_KEY', '');
+    this.httpFrom = this.configService.get<string>('MAIL_FROM', '');
+
     const host = this.configService.get<string>('SMTP_HOST', 'smtp.gmail.com');
     const port = Number(this.configService.get<string>('SMTP_PORT', '465'));
     const user = this.configService.get<string>('SMTP_USER', '');
@@ -43,9 +53,10 @@ export class MailService {
       (user ? `Elyron <${user}>` : 'Elyron <no-reply@elyron.local>');
     this.enabled =
       this.configService.get<string>('MAIL_ENABLED', 'false') === 'true' &&
-      Boolean(user && pass);
+      ((this.provider === 'http' && Boolean(this.httpApiKey)) ||
+        (this.provider === 'smtp' && Boolean(user && pass)));
 
-    if (this.enabled) {
+    if (this.enabled && this.provider === 'smtp') {
       this.transporter = nodemailer.createTransport({
         host,
         port,
@@ -58,12 +69,48 @@ export class MailService {
   }
 
   private async enviar(opts: MailOptions): Promise<EmailResult> {
-    if (!this.enabled || !this.transporter) {
+    if (!this.enabled) {
       this.logger.log(
         `[correo preview] Para: ${opts.to} | Asunto: ${opts.subject}\n${opts.html}`,
       );
       return { ok: true, mode: 'preview' };
     }
+
+    if (this.provider === 'http') {
+      try {
+        // Resend HTTP API (funciona por puerto 443; ideal para hosts que
+        // bloquean SMTP 25/465/587, como el plan free de Render).
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.httpApiKey}`,
+          },
+          body: JSON.stringify({
+            from: this.httpFrom || 'Elyron <no-reply@elyron.app>',
+            to: opts.to,
+            subject: opts.subject,
+            html: opts.html,
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { id?: string };
+        if (!res.ok) {
+          this.logger.error(
+            `Resend devolvió error ${res.status} para ${opts.to}`,
+          );
+          return { ok: false, mode: 'http' };
+        }
+        this.logger.log(`Correo enviado (Resend) a ${opts.to}: ${data.id}`);
+        return { ok: true, mode: 'http', messageId: data.id };
+      } catch (err) {
+        this.logger.error(
+          `No se pudo enviar el correo (Resend) a ${opts.to}: ${(err as Error).message}`,
+        );
+        return { ok: false, mode: 'http' };
+      }
+    }
+
+    if (!this.transporter) return { ok: false, mode: 'disabled' };
     try {
       const info = await this.transporter.sendMail({
         from: this.from,

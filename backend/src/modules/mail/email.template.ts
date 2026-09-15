@@ -24,12 +24,13 @@
    ============================================================ */
 
 /* URL pública de la imagen de diseño del correo.
-   Se sirve desde el backend (uploads) para que los clientes de correo
-   (Gmail/Outlook, móvil y escritorio) puedan cargarla, a diferencia de
-   una imagen incrustada en base64 que muchos clientes bloquean. */
+   Se sirve desde el backend (ruta /mail-assets) para que los clientes de
+   correo (Gmail/Outlook, móvil y escritorio) puedan cargarla, a diferencia de
+   una imagen incrustada en base64 que muchos clientes bloquean.
+   La imagen NO está en /uploads (que ya no es público). */
 const EMAIL_IMAGE_URL =
   (process.env.PUBLIC_API_URL || 'http://localhost:3000').replace(/\/$/, '') +
-  '/uploads/correo.png';
+  '/mail-assets/correo.png';
 
 /* ---------- Utilidades ---------- */
 

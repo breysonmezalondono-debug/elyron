@@ -11,7 +11,13 @@ import { SenaController } from './sena.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FichaInstructor, Remision, User, Ficha, PerfilSena]),
+    TypeOrmModule.forFeature([
+      FichaInstructor,
+      Remision,
+      User,
+      Ficha,
+      PerfilSena,
+    ]),
   ],
   controllers: [SenaController],
   providers: [SenaService, SenaAccessService],

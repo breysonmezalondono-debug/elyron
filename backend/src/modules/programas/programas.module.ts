@@ -9,7 +9,9 @@ import { ProgramasController } from './programas.controller';
 import { CatalogoAcademicoController } from './catalogo-academico.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Programa, Ficha, Grupo, InstitucionCatalogo])],
+  imports: [
+    TypeOrmModule.forFeature([Programa, Ficha, Grupo, InstitucionCatalogo]),
+  ],
   controllers: [ProgramasController, CatalogoAcademicoController],
   providers: [ProgramasService],
   exports: [ProgramasService],

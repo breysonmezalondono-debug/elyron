@@ -24,8 +24,10 @@ export const EDUCORE_SERVICE_URL = (env('VITE_EDUCORE_URL', '') || API_BASE + '/
 /** Microservicio de IA (Elir / tutor socrático / streaming). */
 export const AI_SERVICE_URL = env('VITE_AI_URL', 'http://localhost:8000').replace(/\/$/, '');
 
-/** Modo demo sin backend: true = datos Mock, false = llamadas HTTP reales. */
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK_AUTH !== 'false';
+/** Modo demo sin backend: true = datos Mock, false = llamadas HTTP reales.
+    Opt-in explícito: si no se define la variable, se usa el backend real
+    (seguro para builds de producción). */
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
 
 /* ============================================================
    RUTAS · Auth Service

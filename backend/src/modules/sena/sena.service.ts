@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { User } from '../users/user.entity';
@@ -154,7 +159,10 @@ export class SenaService {
     const ids = Array.from(new Set(porPerfilIds));
     const users = await this.userRepo.find({
       where: ids.length
-        ? [{ institucion: 'sena', fichaId }, { institucion: 'sena', id: In(ids) }]
+        ? [
+            { institucion: 'sena', fichaId },
+            { institucion: 'sena', id: In(ids) },
+          ]
         : { institucion: 'sena', fichaId },
       relations: { role: true },
     });

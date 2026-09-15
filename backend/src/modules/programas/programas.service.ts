@@ -112,9 +112,7 @@ export class ProgramasService {
       universidades: Array.from(
         new Set([...UNIVERSIDADES_DISPONIBLES, ...universidadesBd]),
       ),
-      colegios: Array.from(
-        new Set([...COLEGIOS_DISPONIBLES, ...colegiosBd]),
-      ),
+      colegios: Array.from(new Set([...COLEGIOS_DISPONIBLES, ...colegiosBd])),
       regionales: [
         ...REGIONALES_SENA,
         ...sedesBd.map((sede) => ({

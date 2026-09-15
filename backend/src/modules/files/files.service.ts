@@ -1,18 +1,12 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import * as fs from 'fs';
 import * as path from 'path';
+import { StorageService } from '../../common/storage/storage.service';
+
 @Injectable()
 export class FilesService {
-  private readonly uploadDir = process.env.UPLOAD_DIR || './uploads';
-  private readonly uploadRoot = path.resolve(
-    process.env.UPLOAD_DIR || './uploads',
-  );
-  constructor() {
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
-  }
+  constructor(private readonly storage: StorageService) {}
+
   private sanitizeFilename(filename: string): void {
     if (filename.includes('..') || /[\\/]/.test(filename)) {
       throw new BadRequestException('Nombre de archivo inválido');
@@ -25,16 +19,7 @@ export class FilesService {
     }
     return folder;
   }
-  private assertInsideUploadDir(...segments: string[]): string {
-    const resolved = path.resolve(this.uploadDir, ...segments);
-    if (
-      resolved !== this.uploadRoot &&
-      !resolved.startsWith(this.uploadRoot + path.sep)
-    ) {
-      throw new BadRequestException('Ruta de archivo inválida');
-    }
-    return resolved;
-  }
+
   async uploadFile(
     file: Express.Multer.File,
     folder?: string,
@@ -46,16 +31,15 @@ export class FilesService {
     const safeFolder = this.sanitizeFolder(folder);
     const ext = path.extname(file.originalname);
     const filename = `${randomUUID()}${ext}`;
-    const folderPath = safeFolder
-      ? this.assertInsideUploadDir(safeFolder)
-      : this.uploadRoot;
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true });
-    }
-    const filePath = path.join(folderPath, filename);
-    fs.writeFileSync(filePath, file.buffer);
+    const scope = safeFolder || 'general';
+    const key = this.storage.buildKey(scope, filename);
+    await this.storage.put(
+      key,
+      file.buffer,
+      file.mimetype || 'application/octet-stream',
+    );
     return {
-      url: `/uploads/${safeFolder ? `${safeFolder}/` : ''}${filename}`,
+      url: `/api/files/archivo?folder=${safeFolder ? encodeURIComponent(safeFolder) : ''}&filename=${encodeURIComponent(filename)}`,
       filename,
     };
   }
@@ -77,12 +61,24 @@ export class FilesService {
     }
     return results;
   }
+
+  /** Devuelve los bytes de un archivo (disco o S3). */
+  async readFile(
+    filename: string,
+    folder?: string,
+  ): Promise<{ buffer: Buffer; mime: string }> {
+    this.sanitizeFilename(filename);
+    const safeFolder = this.sanitizeFolder(folder);
+    const scope = safeFolder || 'general';
+    const key = this.storage.buildKey(scope, filename);
+    return this.storage.get(key);
+  }
+
   async deleteFile(filename: string, folder?: string): Promise<void> {
     this.sanitizeFilename(filename);
     const safeFolder = this.sanitizeFolder(folder);
-    const filePath = this.assertInsideUploadDir(safeFolder || '', filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    const scope = safeFolder || 'general';
+    const key = this.storage.buildKey(scope, filename);
+    await this.storage.remove(key);
   }
 }

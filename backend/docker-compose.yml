@@ -1,4 +1,10 @@
-﻿services:
+﻿# ============================================================
+# ELYRON · docker-compose de DESARROLLO
+# Levanta MySQL local + API para desarrollo. NO usar en producción
+# (la BD embebida no es segura ni persistente de forma gestionada).
+# Para producción usa docker-compose.prod.yml con BD administrada.
+# ============================================================
+services:
   db:
     image: mysql:8.0
     container_name: elyron_db

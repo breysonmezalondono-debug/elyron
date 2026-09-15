@@ -9,8 +9,15 @@ function makeService() {
     save: jest.fn((v) => Promise.resolve(v)),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
   };
-  const svc = new ElirFilesService(repo as never);
-  return { svc, repo };
+  const storage = {
+    put: jest.fn().mockResolvedValue({ key: 'x', size: 0, mime: '' }),
+    get: jest.fn().mockResolvedValue({ buffer: Buffer.from(''), mime: '' }),
+    remove: jest.fn().mockResolvedValue(undefined),
+    signedUrl: jest.fn().mockResolvedValue(null),
+    buildKey: jest.fn((scope: string, name: string) => `${scope}/${name}`),
+  };
+  const svc = new ElirFilesService(repo as never, storage as never);
+  return { svc, repo, storage };
 }
 
 const baseFile = (

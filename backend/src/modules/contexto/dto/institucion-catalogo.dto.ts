@@ -1,6 +1,16 @@
-import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
-export const INSTITUCION_CATALOGO_TIPOS = ['colegio', 'universidad', 'sena'] as const;
+export const INSTITUCION_CATALOGO_TIPOS = [
+  'colegio',
+  'universidad',
+  'sena',
+] as const;
 
 export class CreateInstitucionCatalogoDto {
   @IsString()
