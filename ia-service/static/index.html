@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atelier — Asistente Privado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root {
+    --bg: #040405;
+    --bg-soft: #09090b;
+    --gold: #cfae62;
+    --gold-bright: #ecd9a8;
+    --gold-dim: rgba(207, 174, 98, 0.35);
+    --hairline: rgba(207, 174, 98, 0.14);
+    --text: #eae4d6;
+    --muted: #77705f;
+    --faint: #4a4539;
+    --danger: #b34a52;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: "Jost", system-ui, sans-serif;
+    font-weight: 300;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    letter-spacing: 0.01em;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 45% at 75% -10%, rgba(207, 174, 98, 0.07), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 10% 110%, rgba(207, 174, 98, 0.04), transparent 60%);
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  header, main, footer { position: relative; z-index: 1; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--hairline);
+    backdrop-filter: blur(12px);
+    background: rgba(4, 4, 5, 0.6);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--gold-dim);
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, rgba(207,174,98,0.12), rgba(207,174,98,0.02));
+  }
+
+  .brand-mark span {
+    transform: rotate(-45deg);
+    font-family: "Cormorant Garamond", serif;
+    font-size: 17px;
+    font-weight: 600;
+    background: linear-gradient(120deg, var(--gold-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .brand h1 {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    background: linear-gradient(120deg, var(--gold-bright) 20%, var(--gold) 60%, #8f7440);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .model-badge {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 6px 14px;
+    white-space: nowrap;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.35s ease;
+  }
+
+  .btn-clear {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 7px 18px;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .btn-clear:hover {
+    color: var(--gold-bright);
+    border-color: var(--gold-dim);
+    box-shadow: 0 0 24px rgba(207, 174, 98, 0.08);
+  }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 36px clamp(20px, 8vw, 160px);
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--faint) transparent;
+  }
+
+  main::-webkit-scrollbar { width: 4px; }
+  main::-webkit-scrollbar-track { background: transparent; }
+  main::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 4px; }
+  main::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg {
+    max-width: 68%;
+    padding: 14px 20px;
+    line-height: 1.75;
+    font-size: 15px;
+    font-weight: 300;
+    white-space: pre-wrap;
+    word-break: break-word;
+    animation: riseIn 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(207, 174, 98, 0.13), rgba(207, 174, 98, 0.045));
+    border: 1px solid rgba(207, 174, 98, 0.22);
+    border-radius: 16px 16px 4px 16px;
+    color: var(--gold-bright);
+  }
+
+  .msg.bot {
+    align-self: flex-start;
+    padding: 4px 0 4px 22px;
+    border-left: 1px solid var(--hairline);
+    position: relative;
+  }
+
+  .msg.bot::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 0;
+    width: 1px;
+    height: 34%;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+  }
+
+  .msg.error {
+    align-self: center;
+    background: rgba(179, 74, 82, 0.08);
+    border: 1px solid rgba(179, 74, 82, 0.35);
+    color: #d98d92;
+    border-radius: 4px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  .typing { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; }
+
+  .typing::after {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 14px 0 0 var(--gold-dim), 28px 0 0 var(--faint);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.65); opacity: 0.55; }
+  }
+
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    animation: riseIn 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .empty-state .ornament {
+    width: 1px;
+    height: 56px;
+    margin: 0 auto 28px;
+    background: linear-gradient(to bottom, transparent, var(--gold-dim), transparent);
+  }
+
+  .empty-state h2 {
+    font-family: "Cormorant Garamond", serif;
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 500;
+    font-style: italic;
+    letter-spacing: 0.04em;
+    background: linear-gradient(115deg, var(--gold-bright) 15%, var(--gold) 55%, #7a6335);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .empty-state p {
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+  }
+
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 22px clamp(20px, 8vw, 160px) 30px;
+    background: linear-gradient(to top, rgba(4,4,5,0.95), transparent);
+  }
+
+  .input-shell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 6px 6px 6px 26px;
+    background: var(--bg-soft);
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .input-shell:focus-within {
+    border-color: var(--gold-dim);
+    box-shadow: 0 0 0 1px rgba(207, 174, 98, 0.08), 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 32px rgba(207, 174, 98, 0.05);
+  }
+
+  #userInput {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
+    font-weight: 300;
+    font-size: 15px;
+    letter-spacing: 0.015em;
+    padding: 10px 0;
+  }
+
+  #userInput::placeholder { color: var(--faint); font-style: italic; font-family: "Cormorant Garamond", serif; font-size: 17px; }
+
+  #sendBtn {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--gold-dim);
+    background: transparent;
+    color: var(--gold);
+  }
+
+  #sendBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    color: #14100a;
+    box-shadow: 0 0 28px rgba(207, 174, 98, 0.35);
+    transform: scale(1.05);
+  }
+
+  #sendBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #sendBtn svg { width: 17px; height: 17px; }
+
+  .msg.bot h1, .msg.bot h2, .msg.bot h3 {
+    font-family: "Cormorant Garamond", serif;
+    font-weight: 500;
+    color: var(--gold-bright);
+    margin: 14px 0 6px;
+    letter-spacing: 0.03em;
+  }
+  .msg.bot h1 { font-size: 21px; } .msg.bot h2 { font-size: 19px; } .msg.bot h3 { font-size: 17px; }
+  .msg.bot p + p { margin-top: 10px; }
+  .msg.bot ul, .msg.bot ol { margin: 8px 0; padding-left: 22px; }
+  .msg.bot li::marker { color: var(--gold); }
+  .msg.bot strong { font-weight: 500; color: var(--gold-bright); }
+  .msg.bot em { font-style: italic; }
+  .msg.bot a { color: var(--gold); text-decoration-color: var(--gold-dim); }
+  .msg.bot code {
+    font-family: "Consolas", monospace;
+    font-size: 13px;
+    background: rgba(207, 174, 98, 0.09);
+    border: 1px solid rgba(207, 174, 98, 0.12);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--gold-bright);
+  }
+  .msg.bot pre {
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline);
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 12px 0;
+    line-height: 1.6;
+  }
+  .msg.bot pre code { background: none; border: none; padding: 0; color: var(--text); }
+  .msg.bot blockquote { border-left: 1px solid var(--gold-dim); padding-left: 14px; color: var(--muted); font-style: italic; margin: 10px 0; }
+  .msg.bot table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; }
+  .msg.bot th, .msg.bot td { border: 1px solid var(--hairline); padding: 8px 12px; text-align: left; }
+  .msg.bot th { background: rgba(207, 174, 98, 0.07); color: var(--gold-bright); font-weight: 500; letter-spacing: 0.06em; }
+  .msg.bot hr { border: none; height: 1px; background: var(--hairline); margin: 14px 0; }
+
+  @media (max-width: 640px) {
+    header { padding: 14px 18px; }
+    .brand h1 { font-size: 17px; letter-spacing: 0.14em; }
+    .model-badge { display: none; }
+    main { padding: 24px 16px; gap: 20px; }
+    .msg { max-width: 88%; }
+    footer { padding: 16px 16px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark"><span>A</span></div>
+    <h1>Atelier</h1>
+  </div>
+  <div class="settings" style="display:flex;gap:10px;align-items:center;">
+    <span class="model-badge" id="modelBadge">sincronizando…</span>
+    <button class="btn-clear" id="clearChat">Reiniciar</button>
+  </div>
+</header>
+
+<main id="chat">
+  <div class="empty-state">
+    <div class="ornament"></div>
+    <h2>Bienvenido</h2>
+    <p>¿En qué puedo servirle hoy?</p>
+  </div>
+</main>
+
+<footer>
+  <div class="input-shell">
+    <input type="text" id="userInput" placeholder="Escriba su mensaje…" autocomplete="off">
+    <button id="sendBtn" aria-label="Enviar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+    </button>
+  </div>
+</footer>
+
+<script>
+const chat = document.getElementById("chat");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const modelBadge = document.getElementById("modelBadge");
+
+function addMessage(role, text) {
+  const empty = chat.querySelector(".empty-state");
+  if (empty) empty.remove();
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  if (role === "bot") {
+    div.innerHTML = marked.parse(text);
+  } else {
+    div.textContent = text;
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function setBusy(busy) {
+  sendBtn.disabled = busy;
+  userInput.disabled = busy;
+}
+
+async function send() {
+  const text = userInput.value.trim();
+  if (!text) return;
+
+  addMessage("user", text);
+  userInput.value = "";
+  const typing = document.createElement("div");
+  typing.className = "msg bot";
+  typing.innerHTML = '<span class="typing"></span>';
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+  setBusy(true);
+
+  try {
+    const res = await fetch("/api/v1/chat/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: text }],
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      const detail = data.detail || "Error " + res.status;
+      typing.remove();
+      addMessage("error", "Error: " + detail);
+      return;
+    }
+
+    typing.innerHTML = "";
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let full = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const piece = JSON.parse(payload);
+          if (typeof piece === "string") {
+            full += piece;
+            typing.innerHTML = marked.parse(full);
+            chat.scrollTop = chat.scrollHeight;
+          } else if (piece && piece.error) {
+            full = "";
+            typing.className = "msg error";
+            typing.textContent = "Error: " + piece.error;
+          }
+        } catch (_) {}
+      }
+    }
+
+    typing.classList.add("done");
+  } catch (err) {
+    typing.remove();
+    addMessage("error", "Fallo la conexion: " + err.message);
+  } finally {
+    setBusy(false);
+    userInput.focus();
+  }
+}
+
+sendBtn.addEventListener("click", send);
+userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") send();
+});
+document.getElementById("clearChat").addEventListener("click", () => {
+  chat.innerHTML = `
+    <div class="empty-state">
+      <div class="ornament"></div>
+      <h2>Bienvenido</h2>
+      <p>¿En qué puedo servirle hoy?</p>
+    </div>`;
+});
+
+fetch("/health")
+  .then(r => r.json())
+  .then(data => {
+    if (data.model) modelBadge.textContent = data.model;
+  })
+  .catch(() => {
+    modelBadge.textContent = "sin conexión";
+  });
+
+userInput.focus();
+</script>
+</body>
+</html>

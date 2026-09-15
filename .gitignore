@@ -1,0 +1,63 @@
+# ============================================================
+#  Elyron · .gitignore raíz
+#  Nunca se suben secretos, datos reales ni artefactos.
+# ============================================================
+
+# ---------- Dependencias ----------
+node_modules/
+
+# ---------- Variables de entorno (NUNCA subir) ----------
+.env
+.env.*
+!.env.example
+
+# ---------- Build / artefactos ----------
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# ---------- Logs ----------
+*.log
+logs/
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---------- IDE / SO ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---------- Temporal ----------
+tmp/
+temp/
+*.tmp
+
+# ---------- Subidas / datos de usuario (NUNCA) ----------
+uploads/
+storage/
+user-uploads/
+backend/uploads/*
+
+# ---------- Bases de datos / backups (NUNCA) ----------
+*.sql
+*.dump
+*.bak
+*.sqlite
+*.sqlite3
+
+# ---------- Secretos / certificados / credenciales ----------
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+credentials.json
+service-account.json
+firebase-adminsdk.json
+*.p8

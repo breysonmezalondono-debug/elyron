@@ -1,0 +1,18 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
+export class SendMessageDto {
+  @IsUUID()
+  receiverId: string;
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4000)
+  content: string;
+  @IsOptional()
+  @IsString()
+  roomId?: string;
+}

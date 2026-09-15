@@ -1,0 +1,50 @@
+﻿services:
+  db:
+    image: mysql:8.0
+    container_name: elyron_db
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-elyron123}
+      MYSQL_DATABASE: ${DB_NAME:-elyron_db}
+      MYSQL_USER: ${DB_USERNAME:-elyron}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-elyron123}
+    ports:
+      - "${DB_DOCKER_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    container_name: elyron_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USERNAME: ${DB_USERNAME:-elyron}
+      DB_PASSWORD: ${DB_PASSWORD:-elyron123}
+      DB_NAME: ${DB_NAME:-elyron_db}
+      JWT_SECRET: ${JWT_SECRET:-cambia_esto_en_produccion}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cambia_esto_tambien}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_data:/app/uploads
+
+volumes:
+  mysql_data:
+  uploads_data:

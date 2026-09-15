@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 124" width="120" height="124">
+  <defs>
+    <linearGradient id="elir-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#27272a" />
+      <stop offset="100%" stopColor="#0c0c0f" />
+    </linearGradient>
+    <radialGradient id="elir-sheen" cx="0.32" cy="0.22" r="0.55">
+      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.14" />
+      <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- antena con punto de estado -->
+  <line x1="60" y1="28" x2="60" y2="16" stroke="#3f3f46" stroke-width="4" stroke-linecap="round" />
+  <circle cx="60" cy="12" r="6" fill="#22c55e" />
+  <circle cx="60" cy="12" r="10" fill="none" stroke="#22c55e" stroke-width="1.4" opacity="0.28" />
+
+  <!-- cuerpo: la bola negra -->
+  <rect x="16" y="26" width="88" height="82" rx="38" fill="url(#elir-body)" />
+  <rect x="16" y="26" width="88" height="82" rx="38" fill="url(#elir-sheen)" />
+
+  <!-- ojos -->
+  <g>
+    <ellipse cx="45" cy="64" rx="8.5" ry="9.5" fill="#ffffff" />
+    <circle cx="46.4" cy="65" r="3.4" fill="#18181b" />
+    <circle cx="48" cy="61.6" r="1.1" fill="#ffffff" opacity="0.9" />
+  </g>
+  <g>
+    <ellipse cx="75" cy="64" rx="8.5" ry="9.5" fill="#ffffff" />
+    <circle cx="76.4" cy="65" r="3.4" fill="#18181b" />
+    <circle cx="78" cy="61.6" r="1.1" fill="#ffffff" opacity="0.9" />
+  </g>
+
+  <!-- sonrisa -->
+  <path d="M48 79 Q60 89 72 79" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" fill="none" />
+</svg>
