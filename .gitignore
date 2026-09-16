@@ -43,6 +43,8 @@ uploads/
 storage/
 user-uploads/
 backend/uploads/*
+# Excepción: el módulo de almacenamiento (código de producción) SÍ se versiona.
+!backend/src/common/storage/
 
 # ---------- Bases de datos / backups (NUNCA) ----------
 *.sql
