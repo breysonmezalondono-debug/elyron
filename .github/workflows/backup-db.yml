@@ -76,7 +76,3 @@ jobs:
             echo "No se generó ningún dump"
             exit 1
           fi
-
-      - name: Notificar éxito/fallo (opcional)
-        if: always()
-        run: echo "Estado del backup: ${{ job.status }}"
