@@ -403,10 +403,14 @@ async function seed() {
     where: { email: adminEmail },
   });
   if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash(
-      process.env.ADMIN_PASSWORD || 'AdminBrey150926EJE',
-      10,
-    );
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword || adminPassword.length < 12) {
+      throw new Error(
+        '[seed] Para crear el usuario administrador define ADMIN_PASSWORD (mínimo 12 caracteres). ' +
+        'Nunca uses valores por defecto en producción.',
+      );
+    }
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
     await userRepo.save(
       userRepo.create({
         email: adminEmail,
