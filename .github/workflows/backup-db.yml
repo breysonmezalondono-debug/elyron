@@ -28,7 +28,7 @@ jobs:
       - name: Crear carpeta de respaldo
         run: mkdir -p backup
 
-      - name: Dump de la base de datos
+      - name: Dump de la base de datos (comprimido)
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
@@ -36,18 +36,20 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: ${{ secrets.DB_NAME }}
         run: |
+          set -e
+          STAMP="$(date +%Y-%m-%d_%H%M%S)"
           mysqldump \
             --host="$DB_HOST" \
             --port="${DB_PORT:-3306}" \
             --user="$DB_USER" \
             --password="$DB_PASSWORD" \
+            --ssl-mode=REQUIRED \
             --single-transaction \
             --routines \
             --events \
             --skip-lock-tables \
-            "$DB_NAME" > "backup/${DB_NAME}_$(date +%Y-%m-%d_%H%M%S).sql.gz" \
-            || gzip "backup/${DB_NAME}_$(date +%Y-%m-%d_%H%M%S).sql" 2>/dev/null || true
-        shell: bash
+            "$DB_NAME" | gzip -9 > "backup/${DB_NAME}_${STAMP}.sql.gz"
+          echo "Dump creado: backup/${DB_NAME}_${STAMP}.sql.gz"
 
       - name: Subir a R2 (privado)
         env:
@@ -61,11 +63,15 @@ jobs:
           AWS_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT }}
           AWS_DEFAULT_REGION: ${{ secrets.R2_REGION || 'auto' }}
         run: |
-          if ls backup/*.sql.gz >/dev/null 2>&1; then
-            aws s3 cp backup/ "s3://${R2_BUCKET}/backups/" \
-              --endpoint-url="$R2_ENDPOINT" \
-              --recursive \
-              --only-show-errors
+          set -e
+          FILES=(backup/*.sql.gz)
+          if [[ -f "${FILES[0]}" ]]; then
+            for f in "${FILES[@]}"; do
+              aws s3 cp "$f" "s3://${R2_BUCKET}/backups/$(basename "$f")" \
+                --endpoint-url="$R2_ENDPOINT" \
+                --only-show-errors
+            done
+            echo "Backup subido a R2."
           else
             echo "No se generó ningún dump"
             exit 1
