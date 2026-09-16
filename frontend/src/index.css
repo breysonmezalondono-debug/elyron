@@ -860,6 +860,11 @@ html.theme-anim *::after {
 /* Interacciones propias del login: la luz responde al foco y a la acción principal. */
 .login-page {
   background-color: #0a0a0b;
+  /* Evita que el layout salte cuando aparece/desaparece la barra de scroll
+     al escribir en los campos: reserva siempre su espacio y muestra la
+     barra de forma estable. */
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
 }
 
 :root:not([data-theme='dark']) .login-page {
@@ -889,6 +894,11 @@ html.theme-anim *::after {
   background-size: 100% 100%;
   background-attachment: scroll;
   background-color: #0a0a0b;
+  /* Ancla el panel de marca: aunque el formulario de la derecha sea más
+     alto y haga scroll, la imagen izquierda permanece fija y no salta. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 :root:not([data-theme='dark']) .login-brand-panel::after {
