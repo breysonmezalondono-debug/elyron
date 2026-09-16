@@ -66,3 +66,6 @@ credentials.json
 service-account.json
 firebase-adminsdk.json
 *.p8
+# Archivos locales con credenciales temporales (nunca subir)
+*_PASSWORD*.txt
+ADMIN_PASSWORD*

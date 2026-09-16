@@ -1,15 +1,11 @@
 import { config } from 'dotenv';
 import { DataSource, Repository } from 'typeorm';
+import { mysqlSslOptions } from './ssl-options';
+import { entities } from './entities';
 import { User } from '../modules/users/user.entity';
 import { Role } from '../modules/roles/role.entity';
 import { Permission } from '../modules/permissions/permission.entity';
-import { Company } from '../modules/companies/company.entity';
 import { Ficha } from '../modules/fichas/ficha.entity';
-import { FichaInstructor } from '../modules/sena/entities/ficha-instructor.entity';
-import { Remision } from '../modules/sena/entities/remision.entity';
-import { Grupo } from '../modules/colegio/entities/grupo.entity';
-import { DocenteGrupo } from '../modules/colegio/entities/docente-grupo.entity';
-import { RemisionColegio } from '../modules/colegio/entities/remision-colegio.entity';
 import { Competencia } from '../modules/competencias/competencia.entity';
 import { Resultado } from '../modules/resultados/resultado.entity';
 import { Evidencia } from '../modules/evidencias/evidencia.entity';
@@ -17,8 +13,14 @@ import { CalendarEvent } from '../modules/calendar/entities/calendar-event.entit
 import { JobListing } from '../modules/job-board/entities/job-listing.entity';
 import { Call } from '../modules/calls/entities/call.entity';
 import { CommunityPost } from '../modules/community/entities/community-post.entity';
+import { CommunityAnnouncement } from '../modules/community/entities/community-announcement.entity';
 import { Notification } from '../modules/notifications/notification.entity';
 import { PerfilSena } from '../modules/perfiles/entities/perfil-sena.entity';
+import { Grupo } from '../modules/colegio/entities/grupo.entity';
+import { DocenteGrupo } from '../modules/colegio/entities/docente-grupo.entity';
+import { RemisionColegio } from '../modules/colegio/entities/remision-colegio.entity';
+import { FichaInstructor } from '../modules/sena/entities/ficha-instructor.entity';
+import { Remision } from '../modules/sena/entities/remision.entity';
 import { Solicitud } from '../modules/solicitudes/entities/solicitud.entity';
 import { Comunicado } from '../modules/comunicados/entities/comunicado.entity';
 import { RecursoBiblioteca } from '../modules/biblioteca/entities/recurso-biblioteca.entity';
@@ -30,9 +32,6 @@ import { Actividad } from '../modules/docente/entities/actividad.entity';
 import { Entrega } from '../modules/docente/entities/entrega.entity';
 import { ReporteModeracion } from '../modules/moderacion/entities/reporte.entity';
 import { AuditLog } from '../modules/auditoria/entities/audit-log.entity';
-import { PostComment } from '../modules/community/entities/post-comment.entity';
-import { PostReport } from '../modules/community/entities/post-report.entity';
-import { CommunityAnnouncement } from '../modules/community/entities/community-announcement.entity';
 import * as bcrypt from 'bcrypt';
 import {
   ROLES_SEED,
@@ -327,41 +326,8 @@ async function seed() {
     database: process.env.DB_NAME || 'elyron_db',
     charset: 'utf8mb4',
     timezone: 'Z',
-    entities: [
-      User,
-      Role,
-      Permission,
-      Company,
-      Ficha,
-      FichaInstructor,
-      Remision,
-      Competencia,
-      Resultado,
-      Evidencia,
-      CalendarEvent,
-      JobListing,
-      Call,
-      CommunityPost,
-      Notification,
-      PerfilSena,
-      Grupo,
-      DocenteGrupo,
-      RemisionColegio,
-      Solicitud,
-      Comunicado,
-      RecursoBiblioteca,
-      DocumentoPersonal,
-      FichaAnuncio,
-      Inquietud,
-      Programa,
-      Actividad,
-      Entrega,
-      ReporteModeracion,
-      AuditLog,
-      PostComment,
-      PostReport,
-      CommunityAnnouncement,
-    ],
+    ssl: mysqlSslOptions(),
+    entities,
     synchronize: true,
   });
   await dataSource.initialize();
@@ -457,7 +423,12 @@ async function seed() {
     console.log(`El usuario administrador ya existe: ${adminEmail}`);
   }
 
-  await seedDemo(dataSource, userRepo, roles);
+  const seedDemoEnabled = process.env.SEED_DEMO !== 'false';
+  if (seedDemoEnabled) {
+    await seedDemo(dataSource, userRepo, roles);
+  } else {
+    console.log('SEED_DEMO=false: datos demo omitidos (solo roles/permisos/admin)');
+  }
   await dataSource.destroy();
   console.log('Seed completado');
 }
