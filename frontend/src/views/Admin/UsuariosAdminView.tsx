@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Search, ShieldBan, ShieldCheck, UserPlus, Users } from 'lucide-react';
-import { roleLabel } from '../../model/roles';
+import { roleLabel, findRoleByKey } from '../../model/roles';
 import { getInstitution } from '../../model/mock/orgData';
 import { ADMIN_USERS } from '../../model/mock/adminData';
 import type { AdminUser } from '../../model/mock/adminData';
+import { adminService } from '../../services/adminService';
 import { CrearCuentaModal, ROLES_ADMIN } from '../../components/CrearCuentaModal';
 
 type RoleFilterKey = 'todos' | 'aprendiz' | 'instructor' | 'admin';
@@ -37,11 +38,53 @@ const initialsOf = (name: string): string =>
     .toUpperCase();
 
 export const UsuariosAdminView = () => {
-  const [users, setUsers] = useState(ADMIN_USERS);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilterKey>('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [aviso, setAviso] = useState('');
+
+  /** Convierte el nombre del rol de la API al key usado por la UI. */
+  const roleKeyOf = (roleName?: string | null): string => {
+    if (!roleName) return 'aprendiz';
+    const normalized = roleName.toLowerCase();
+    if (normalized === 'administrador') return 'admin';
+    if (findRoleByKey(normalized)) return normalized;
+    return normalized;
+  };
+
+  /** Convierte un usuario real de la API al formato de la tabla. */
+  const toAdminUser = (u: import('../../services/adminService').UsuarioAdminApi): AdminUser => {
+    const roleKey = roleKeyOf(typeof u.role === 'string' ? u.role : u.role?.name);
+    return {
+      id: u.id,
+      name: `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email,
+      email: u.email,
+      roleKey,
+      institutionId: u.institucion || 'inst-sena',
+      extraRoleKeys: [],
+      status: u.isActive ? 'Activo' : 'Suspendido',
+      lastActive: u.createdAt ? new Date(u.createdAt).toLocaleDateString('es-CO') : '—',
+    };
+  };
+
+  const cargarUsuarios = async () => {
+    setLoading(true);
+    try {
+      const lista = await adminService.listarUsuarios();
+      setUsers(lista.map(toAdminUser));
+    } catch {
+      // Si falla la API (p. ej. modo mock), mostramos la demo local.
+      setUsers(ADMIN_USERS);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void cargarUsuarios();
+  }, []);
 
   const institucionPorRol = (roleKey: string): string => {
     if (['aprendiz', 'instructor', 'coordinador', 'bienestar_sena', 'administrador'].includes(roleKey)) return 'sena';
@@ -51,6 +94,7 @@ export const UsuariosAdminView = () => {
 
   const onCreada = (mensaje: string) => {
     setAviso(mensaje);
+    void cargarUsuarios(); // recarga la lista para mostrar la cuenta nueva
     setTimeout(() => setAviso(''), 5000);
   };
 
@@ -158,9 +202,16 @@ export const UsuariosAdminView = () => {
 
       <motion.div layout className="space-y-3">
         <AnimatePresence mode="popLayout">
-          {filtered.map((user) => (
-            <UserRow key={user.id} user={user} onToggleStatus={() => toggleStatus(user.id)} />
-          ))}
+          {loading ? (
+            <section className="surface flex items-center justify-center gap-3 p-10 text-center">
+              <span className="size-5 animate-spin rounded-full border-2 border-ink-300 border-t-transparent" />
+              <span className="text-sm font-bold text-ink-500">Cargando cuentas…</span>
+            </section>
+          ) : (
+            filtered.map((user) => (
+              <UserRow key={user.id} user={user} onToggleStatus={() => toggleStatus(user.id)} />
+            ))
+          )}
         </AnimatePresence>
       </motion.div>
 

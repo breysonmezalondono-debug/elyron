@@ -55,9 +55,35 @@ export interface FichaConEstudiantes extends FichaAdmin {
   estudiantes?: EstudianteFicha[];
 }
 
+/** Usuario real devuelto por GET /api/users (para el panel de administración). */
+export interface UsuarioAdminApi {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  avatar?: string | null;
+  isActive: boolean;
+  institucion?: string;
+  createdAt?: string;
+  role?: { name?: string } | string | null;
+}
+
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const adminService = {
+  /* ---- Usuarios (panel de administración) ---- */
+  async listarUsuarios(): Promise<UsuarioAdminApi[]> {
+    if (USE_MOCK) {
+      await delay(300);
+      return [];
+    }
+    const res = await educoreClient.get<{ data: UsuarioAdminApi[]; total: number }>(
+      '/users?limit=100',
+    );
+    return res.data.data ?? [];
+  },
+
   /* ---- Instituciones ---- */
   async listarInstituciones(): Promise<InstitucionCatalogo[]> {
     if (USE_MOCK) {
