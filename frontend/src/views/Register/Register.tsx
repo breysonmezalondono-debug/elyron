@@ -28,6 +28,7 @@ import { IconTile } from '../../components/elyron/IconTile';
 import type { IconTileVariant } from '../../components/elyron/IconTile';
 import { portalHomeForRole } from '../../model/permissions';
 import { academicProfileService } from '../../services/academicProfileService';
+import { TerminosCondicionesModal } from '../../components/TerminosCondicionesModal';
 import type {
   CrearPerfilSenaPayload,
   CrearPerfilUniversidadPayload,
@@ -443,6 +444,7 @@ export const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [terminosOpen, setTerminosOpen] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<PerfilAcademicoRespuesta | null>(null);
@@ -1747,33 +1749,58 @@ export const Register = () => {
               )}
             </div>
 
-            <label className="flex cursor-pointer items-start gap-2.5 pt-0.5">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="sr-only"
-              />
-              <span
-                className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border-2 transition-all duration-300 ${
-                  acceptedTerms ? 'border-mint-500 bg-mint-500' : 'border-line-strong dark:border-ink-600'
-                }`}
-              >
-                <svg viewBox="0 0 12 12" width={11} height={11} fill="none" className="text-white transition-opacity duration-200">
-                  <path
-                    d="M2.5 6L5 8.5L9.5 3.5"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ opacity: acceptedTerms ? 1 : 0 }}
-                  />
-                </svg>
-              </span>
-              <span className="text-xs font-bold leading-relaxed text-ink-600 dark:text-ink-300">
-                He leído y acepto la política de privacidad y la protección de mis datos personales.
-              </span>
-            </label>
+            <div className="rounded-2xl border border-line bg-canvas-deep/30 p-3.5 dark:border-ink-700 dark:bg-ink-900/40">
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="sr-only"
+                />
+                <span
+                  className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border-2 transition-all duration-300 ${
+                    acceptedTerms ? 'border-mint-500 bg-mint-500' : 'border-line-strong dark:border-ink-600'
+                  }`}
+                >
+                  <svg viewBox="0 0 12 12" width={11} height={11} fill="none" className="text-white transition-opacity duration-200">
+                    <path
+                      d="M2.5 6L5 8.5L9.5 3.5"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ opacity: acceptedTerms ? 1 : 0 }}
+                    />
+                  </svg>
+                </span>
+                <span className="text-xs font-bold leading-relaxed text-ink-600 dark:text-ink-300">
+                  Acepto los{' '}
+                  <button
+                    type="button"
+                    onClick={() => setTerminosOpen(true)}
+                    className="font-extrabold text-mint-600 underline underline-offset-2 transition hover:text-mint-700 dark:text-mint-400"
+                  >
+                    términos y condiciones
+                  </button>{' '}
+                  y la política de privacidad y protección de mis datos personales.
+                </span>
+              </label>
+              {!acceptedTerms && (
+                <p className="mt-2 text-[11px] font-medium text-ink-400 dark:text-ink-500">
+                  Tus datos no se eliminan de inmediato: se conservan por un periodo de retención.
+                  Lee los términos para más detalle.
+                </p>
+              )}
+            </div>
+
+            <TerminosCondicionesModal
+              open={terminosOpen}
+              onClose={() => setTerminosOpen(false)}
+              onAceptar={() => {
+                setAcceptedTerms(true);
+                setTerminosOpen(false);
+              }}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
