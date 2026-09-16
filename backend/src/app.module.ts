@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { resolveDatabaseConfig } from './database/db-fallback';
+import { mysqlSslOptions } from './database/ssl-options';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -178,6 +179,7 @@ const entities = [
           migrationsRun: false,
           migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
           extra: { multipleStatements: true },
+          ssl: mysqlSslOptions(),
           retryAttempts: 10,
           retryDelay: 3000,
         };

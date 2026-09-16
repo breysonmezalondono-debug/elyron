@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
+import { mysqlSslOptions } from './ssl-options';
 
 /**
  * Ejecuta las migraciones pendientes de TypeORM de forma programática.
@@ -22,6 +23,7 @@ async function main() {
     timezone: 'Z',
     synchronize: false,
     extra: { multipleStatements: true },
+    ssl: mysqlSslOptions(),
     migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
   });
   await dataSource.initialize();

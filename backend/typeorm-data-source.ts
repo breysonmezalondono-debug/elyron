@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
+import { mysqlSslOptions } from './src/database/ssl-options';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ export default new DataSource({
   charset: 'utf8mb4',
   timezone: 'Z',
   synchronize: false,
+  ssl: mysqlSslOptions(),
   migrations: [
     join(process.cwd(), 'src', 'database', 'migrations', '*.{ts,js}'),
   ],
